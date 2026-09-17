@@ -10,6 +10,30 @@ if (is_readable($envFile)) {
     }
 }
 
+$loginError = '';
+if (isset($_GET['logout'])) {
+    unset($_SESSION['authenticated']);
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
+    if (($_POST['username'] ?? '') === 'admin' && ($_POST['password'] ?? '') === 'admin') {
+        session_regenerate_id(true);
+        $_SESSION['authenticated'] = true;
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    $loginError = 'Usuário ou senha inválidos.';
+}
+if (empty($_SESSION['authenticated'])) {
+    ?>
+    <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Login | Leadsite</title><style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#132c24;color:#15251f;font:14px Arial,sans-serif}.login{width:min(390px,calc(100% - 32px));background:#fff;border-radius:12px;padding:38px;box-shadow:0 20px 60px #071d1555}.brand{margin:0 0 34px;color:#132c24;font-size:25px;font-weight:800;letter-spacing:-1px}.brand span{color:#18794e}.eyebrow{color:#73817b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}.login h1{font-size:24px;margin:0 0 8px}.login p{color:#73817b;margin:0 0 25px}.field{display:block;margin-bottom:16px}.field label{display:block;color:#56665e;font-size:12px;font-weight:700;margin-bottom:7px}.field input{width:100%;height:43px;border:1px solid #dce5df;border-radius:6px;padding:0 12px;outline:0}.field input:focus{border-color:#18794e}.submit{width:100%;height:43px;border:0;border-radius:6px;background:#18794e;color:#fff;font-weight:700;cursor:pointer}.error{background:#fff0ee;border:1px solid #f2c4bc;color:#a54538;border-radius:6px;padding:10px 12px;margin-bottom:16px}
+    </style></head><body><main class="login"><div class="brand">leads<span>site</span></div><div class="eyebrow">Área restrita</div><h1>Entrar no painel</h1><p>Acesse sua central de prospecção.</p><?php if ($loginError): ?><div class="error"><?= htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?><form method="post"><input type="hidden" name="action" value="login"><label class="field"><span>Usuário</span><input name="username" autocomplete="username" required autofocus></label><label class="field"><span>Senha</span><input type="password" name="password" autocomplete="current-password" required></label><button class="submit" type="submit">Entrar</button></form></main></body></html>
+    <?php
+    exit;
+}
+
 $leads = [
     ['id'=>1,'name'=>'Studio Movimento Pilates','category'=>'Pilates','city'=>'São Paulo','state'=>'SP','neighborhood'=>'Vila Madalena','phone'=>'(11) 3814-2040','rating'=>'4,9','reviews'=>184,'website'=>'studiomovimento.com.br','lastSeen'=>'Hoje, 09:42','color'=>'#f5b544'],
     ['id'=>2,'name'=>'Clínica Vitta Odontologia','category'=>'Clínica odontológica','city'=>'São Paulo','state'=>'SP','neighborhood'=>'Moema','phone'=>'(11) 5096-1182','rating'=>'4,8','reviews'=>96,'website'=>'clinicavitta.com.br','lastSeen'=>'Hoje, 09:18','color'=>'#5b8def'],
@@ -219,7 +243,7 @@ function initials($name) { $parts = preg_split('/\s+/', trim($name)); return str
 </head>
 <body>
 <div class="app"><aside class="sidebar"><div class="brand">leads<span>site</span></div><div class="nav-label">Workspace</div><nav class="nav"><a href="?view=leads" class="<?= $view === 'leads' ? 'active' : '' ?>"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Encontrar leads</span></a><a href="?view=crm" class="<?= $view === 'crm' ? 'active' : '' ?>"><svg viewBox="0 0 24 24"><path d="M16 20v-1.8a3.2 3.2 0 0 0-3.2-3.2H6.2A3.2 3.2 0 0 0 3 18.2V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M16 11a3.5 3.5 0 0 0 0-7M17.5 15h.3a3.2 3.2 0 0 1 3.2 3.2V20"/></svg><span>Meu CRM <b style="color:#a4e0b8;font-size:11px">(<?= count($crmLeads) ?>)</b></span></a></nav><div class="sidebar-bottom"><div class="user"><div class="avatar">NO</div><div><strong>Nicolas Oliveira</strong><small>Equipe comercial</small></div></div></div></aside>
-<main class="main"><header class="topbar"><div class="crumb">Workspace <span>/</span> <b><?= $view === 'crm' ? 'Meu CRM' : 'Encontrar leads' ?></b></div><div class="top-actions"><a class="help" href="#">Central de ajuda</a><span class="bell">●</span></div></header><section class="content">
+<main class="main"><header class="topbar"><div class="crumb">Workspace <span>/</span> <b><?= $view === 'crm' ? 'Meu CRM' : 'Encontrar leads' ?></b></div><div class="top-actions"><a class="help" href="?logout=1">Sair</a><span class="bell">●</span></div></header><section class="content">
 <?php if ($flash): ?><div class="flash"><?= e($flash) ?></div><?php endif; ?><div class="heading"><div><h1><?= $view === 'crm' ? 'Meu CRM' : 'Encontre novos negócios' ?></h1><p><?= $view === 'crm' ? 'Acompanhe os leads que sua equipe separou para contato.' : 'Encontre empresas no Google Maps e transforme oportunidades em clientes.' ?></p></div><?php if ($view === 'leads'): ?><button class="primary" type="button" onclick="document.querySelector('.filters').scrollIntoView({behavior:'smooth'})"><span>+</span> Nova busca</button><?php endif; ?></div>
 <?php if ($view === 'crm'): ?><div class="crm-head"><div class="stat"><b><?= count($crmLeads) ?></b><span>Leads salvos</span></div><div class="stat"><b><?= $countContacted ?></b><span>Contatos feitos</span></div><div class="stat"><b><?= count($crmLeads) - $countContacted ?></b><span>Aguardando contato</span></div></div><?php else: ?><form class="filters" method="get"><input type="hidden" name="view" value="leads"><div class="search-wrap"><input class="search" name="q" value="<?= e($query) ?>" placeholder="Buscar por nome ou palavra-chave"></div><div class="field"><label>Estado</label><select name="state"><option value="">Todos os estados</option><?php foreach ($states as $option): ?><option <?= $filters['state']===$option?'selected':'' ?>><?= e($option) ?></option><?php endforeach; ?></select></div><div class="field"><label>Cidade</label><select name="city"><option value="">Todas as cidades</option><?php foreach ($cities as $option): ?><option <?= $filters['city']===$option?'selected':'' ?>><?= e($option) ?></option><?php endforeach; ?></select></div><div class="field"><label>Bairro</label><select name="neighborhood"><option value="">Todos os bairros</option><?php foreach ($neighborhoods as $option): ?><option <?= $filters['neighborhood']===$option?'selected':'' ?>><?= e($option) ?></option><?php endforeach; ?></select></div><div class="field"><label>Nicho</label><select name="category"><option value="">Todos os nichos</option><?php foreach ($categories as $option): ?><option <?= $filters['category']===$option?'selected':'' ?>><?= e($option) ?></option><?php endforeach; ?></select></div><button class="filter-btn">Filtrar</button></form><?php endif; ?>
 <div class="summary"><strong><?= count($shown) ?> <?= $view === 'crm' ? 'leads no seu CRM' : 'negócios encontrados' ?></strong><span><?= $view === 'crm' ? 'Organize seus próximos contatos' : 'Dados atualizados recentemente' ?></span></div>
